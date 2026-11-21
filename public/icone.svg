@@ -1,0 +1,13 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" role="img" aria-label="Relicário">
+  <rect width="512" height="512" rx="96" fill="#f7f2e9"/>
+  <g fill="none" stroke="#8a6a52" stroke-width="18" stroke-linecap="round">
+    <circle cx="256" cy="120" r="38"/>
+    <circle cx="256" cy="287" r="138"/>
+    <circle cx="256" cy="287" r="76"/>
+  </g>
+  <circle cx="256" cy="287" r="130" fill="#e9dccb" opacity="0.55"/>
+  <g fill="none" stroke="#8a6a52" stroke-width="18" stroke-linecap="round">
+    <circle cx="256" cy="287" r="138"/>
+    <circle cx="256" cy="287" r="76"/>
+  </g>
+</svg>
