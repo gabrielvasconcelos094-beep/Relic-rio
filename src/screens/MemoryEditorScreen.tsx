@@ -48,7 +48,6 @@ export function MemoryEditorScreen() {
   const [errors, setErrors] = useState<{ date?: string; content?: string }>({});
   const [newPersonName, setNewPersonName] = useState('');
   const createdAttachments = useRef<string[]>([]);
-  const savedRef = useRef(false);
 
   useEffect(() => {
     if (id && existing) setDraft((d) => (d.id === existing.id ? d : { ...existing }));
@@ -119,7 +118,6 @@ export function MemoryEditorScreen() {
         occurredAt: draft.occurredAt || null,
         occurredPrecision: draft.occurredAt ? draft.occurredPrecision : 'unknown',
       });
-      savedRef.current = true;
       toast(isNew ? 'Memória guardada.' : 'Memória atualizada.');
       navigate(`/memoria/${saved.id}`, { replace: true });
     } catch (err) {
