@@ -8,7 +8,9 @@ import { Icon } from '@/components/Icon';
 import { TopBar } from '@/components/ui';
 import { AttachmentEditor } from '@/components/Attachments';
 import { TagInput } from '@/components/TagInput';
-import { isValidCivil, todayCivil } from '@/utils/date';
+import { PRECISION_LABEL, isValidCivil, todayCivil } from '@/utils/date';
+import type { DatePrecision } from '@/db/types';
+import { extractText } from '@/utils/text-extract';
 
 export function MemoryEditorScreen() {
   const { id } = useParams();
@@ -16,30 +18,37 @@ export function MemoryEditorScreen() {
   const navigate = useNavigate();
   const { toast, confirm } = useUi();
   const {
-    memories,
+    allMemories,
     people,
     categories,
+    collections,
+    sources,
     attachments,
     allTags,
+    settings,
     saveMemory,
+    createMemory,
     savePerson,
     addAttachment,
     updateAttachment,
     deleteAttachment,
   } = useArchive();
 
-  const existing = id ? memories.find((m) => m.id === id) : undefined;
+  const existing = id ? allMemories.find((m) => m.id === id) : undefined;
   const isNew = !id;
 
   const [draft, setDraft] = useState<Memory>(() => {
     if (existing) return { ...existing };
     const base = emptyMemory();
     const personId = params.get('pessoa');
+    const collectionId = params.get('colecao');
     return {
       ...base,
       occurredAt: todayCivil(),
       personIds: personId ? [personId] : [],
+      collectionIds: collectionId ? [collectionId] : [],
       hardDay: params.get('abrigo') === '1',
+      inbox: params.get('entrada') === '1',
     };
   });
   const [dirty, setDirty] = useState(false);
@@ -70,8 +79,13 @@ export function MemoryEditorScreen() {
     setUploading(true);
     try {
       for (const file of Array.from(files)) {
-        const att = await addAttachment(file, 'memory', draft.id);
+        const att = await addAttachment(file, 'memory', draft.id, { sourceId: draft.sourceId });
         createdAttachments.current.push(att.id);
+        // Indexa o texto de PDFs e arquivos de texto, sem sair do aparelho.
+        if (settings.extractPdfText) {
+          const extracted = await extractText(att);
+          if (extracted) await updateAttachment({ ...att, textContent: extracted });
+        }
       }
       setDirty(true);
     } catch (err) {
@@ -98,8 +112,15 @@ export function MemoryEditorScreen() {
 
   const validate = (): boolean => {
     const next: typeof errors = {};
-    if (draft.occurredAt && !isValidCivil(draft.occurredAt)) {
-      next.date = 'Informe uma data válida ou deixe o campo vazio.';
+    if (
+      draft.occurredPrecision !== 'unknown' &&
+      draft.occurredAt &&
+      !isValidCivil(draft.occurredAt)
+    ) {
+      next.date = 'Informe uma data válida ou escolha “Data desconhecida”.';
+    }
+    if (draft.occurredPrecision !== 'unknown' && !draft.occurredAt) {
+      next.date = 'Informe a data, ou escolha “Data desconhecida”.';
     }
     if (!draft.title.trim() && !draft.text.trim() && own.length === 0) {
       next.content = 'Dê um título, escreva algo ou anexe um arquivo para guardar este registro.';
@@ -112,13 +133,20 @@ export function MemoryEditorScreen() {
     if (!validate()) return;
     setSaving(true);
     try {
-      const saved = await saveMemory({
+      const payload = {
         ...draft,
         title: draft.title.trim(),
-        occurredAt: draft.occurredAt || null,
-        occurredPrecision: draft.occurredAt ? draft.occurredPrecision : 'unknown',
-      });
-      toast(isNew ? 'Memória guardada.' : 'Memória atualizada.');
+        occurredAt: draft.occurredPrecision === 'unknown' ? null : draft.occurredAt || null,
+        occurredNote: draft.occurredNote.trim(),
+      };
+      const saved = isNew ? await createMemory(payload) : await saveMemory(payload);
+      toast(
+        isNew
+          ? payload.inbox
+            ? 'Guardado na Entrada para organizar depois.'
+            : 'Memória guardada.'
+          : 'Memória atualizada.',
+      );
       navigate(`/memoria/${saved.id}`, { replace: true });
     } catch (err) {
       toast(err instanceof Error ? err.message : 'Não foi possível guardar.', 'error');
@@ -224,37 +252,98 @@ export function MemoryEditorScreen() {
 
         {errors.content && <p className="error-text">{errors.content}</p>}
 
-        <div className="row" style={{ gap: 12, alignItems: 'flex-start' }}>
-          <div className="field" style={{ flex: 1.3 }}>
-            <label htmlFor="ocorrido">Aconteceu em</label>
-            <input
-              id="ocorrido"
-              type="date"
-              className={errors.date ? 'input input-error' : 'input'}
-              value={draft.occurredAt ?? ''}
-              onChange={(e) => patch({ occurredAt: e.target.value || null })}
-            />
+        <div className="field">
+          <label htmlFor="precisao">Quando isso aconteceu</label>
+          <select
+            id="precisao"
+            className="input"
+            value={draft.occurredPrecision}
+            onChange={(e) => {
+              const precision = e.target.value as DatePrecision;
+              patch({
+                occurredPrecision: precision,
+                occurredAt:
+                  precision === 'unknown' ? null : (draft.occurredAt ?? todayCivil()),
+              });
+            }}
+          >
+            {(['day', 'month', 'year', 'approximate', 'unknown'] as DatePrecision[]).map((p) => (
+              <option key={p} value={p}>
+                {PRECISION_LABEL[p]}
+              </option>
+            ))}
+          </select>
+          <span className="hint">
+            O Relicário guarda exatamente a precisão que você informar, sem inventar o que falta.
+          </span>
+        </div>
+
+        {draft.occurredPrecision !== 'unknown' && (
+          <div className="field">
+            <label htmlFor="ocorrido">
+              {draft.occurredPrecision === 'year'
+                ? 'Ano'
+                : draft.occurredPrecision === 'month'
+                  ? 'Mês e ano'
+                  : draft.occurredPrecision === 'approximate'
+                    ? 'Mais ou menos quando'
+                    : 'Data'}
+            </label>
+            {draft.occurredPrecision === 'year' ? (
+              <input
+                id="ocorrido"
+                type="number"
+                inputMode="numeric"
+                className={errors.date ? 'input input-error' : 'input'}
+                min={1}
+                max={9999}
+                value={draft.occurredAt ? draft.occurredAt.slice(0, 4) : ''}
+                onChange={(e) =>
+                  patch({
+                    occurredAt: e.target.value ? `${e.target.value.padStart(4, '0')}-01-01` : null,
+                  })
+                }
+              />
+            ) : draft.occurredPrecision === 'month' || draft.occurredPrecision === 'approximate' ? (
+              <input
+                id="ocorrido"
+                type="month"
+                className={errors.date ? 'input input-error' : 'input'}
+                value={draft.occurredAt ? draft.occurredAt.slice(0, 7) : ''}
+                onChange={(e) =>
+                  patch({ occurredAt: e.target.value ? `${e.target.value}-01` : null })
+                }
+              />
+            ) : (
+              <input
+                id="ocorrido"
+                type="date"
+                className={errors.date ? 'input input-error' : 'input'}
+                value={draft.occurredAt ?? ''}
+                onChange={(e) => patch({ occurredAt: e.target.value || null })}
+              />
+            )}
             <span className="hint">Pode ser de muitos anos atrás.</span>
           </div>
-          <div className="field" style={{ flex: 1 }}>
-            <label htmlFor="precisao">Precisão</label>
-            <select
-              id="precisao"
+        )}
+
+        {(draft.occurredPrecision === 'approximate' || draft.occurredPrecision === 'unknown') && (
+          <div className="field">
+            <label htmlFor="data-nota">Como você lembra da época</label>
+            <input
+              id="data-nota"
               className="input"
-              value={draft.occurredPrecision}
-              onChange={(e) =>
-                patch({ occurredPrecision: e.target.value as Memory['occurredPrecision'] })
-              }
-            >
-              <option value="day">Dia exato</option>
-              <option value="month">Mês</option>
-              <option value="year">Ano</option>
-            </select>
+              placeholder="No inverno daquele ano, no fim do curso…"
+              value={draft.occurredNote}
+              onChange={(e) => patch({ occurredNote: e.target.value })}
+            />
+            <span className="hint">Opcional. Fica registrado como estimativa, não como data.</span>
           </div>
-        </div>
+        )}
+
         {errors.date && <p className="error-text">{errors.date}</p>}
         <p className="tiny faint" style={{ marginTop: -14 }}>
-          A data em que o registro entra no relicário é guardada separadamente.
+          A data em que o registro entrou no relicário é guardada separadamente e não muda.
         </p>
 
         <div className="field">
@@ -319,6 +408,48 @@ export function MemoryEditorScreen() {
           </div>
           <span className="hint">Uma memória pode pertencer a mais de uma categoria.</span>
         </div>
+
+        <div className="field">
+          <label htmlFor="origem">Origem</label>
+          <select
+            id="origem"
+            className="input"
+            value={draft.sourceId ?? ''}
+            onChange={(e) => patch({ sourceId: e.target.value || null })}
+          >
+            <option value="">Não informada</option>
+            {sources.map((s) => (
+              <option key={s.id} value={s.id}>
+                {s.name}
+              </option>
+            ))}
+          </select>
+          <span className="hint">De onde veio esta memória. Opcional.</span>
+        </div>
+
+        {collections.length > 0 && (
+          <div className="field">
+            <label>Coleções</label>
+            <div className="row-wrap">
+              {collections.map((c) => (
+                <button
+                  key={c.id}
+                  type="button"
+                  className="chip chip-toggle"
+                  aria-pressed={draft.collectionIds.includes(c.id)}
+                  onClick={() => patch({ collectionIds: toggleIn(draft.collectionIds, c.id) })}
+                >
+                  <span
+                    className="chip-dot"
+                    style={{ background: `var(--cat-${c.color}, var(--cat-tinta))` }}
+                  />
+                  {c.name}
+                </button>
+              ))}
+            </div>
+            <span className="hint">Uma memória pode estar em várias coleções.</span>
+          </div>
+        )}
 
         <TagInput
           value={draft.tags}
@@ -390,6 +521,22 @@ export function MemoryEditorScreen() {
               onClick={() => patch({ hardDay: !draft.hardDay })}
             />
           </div>
+          <div className="switch-row">
+            <div className="switch-text">
+              <strong>Deixar na Entrada</strong>
+              <span className="tiny faint">
+                Fica aguardando organização em vez de entrar direto no arquivo.
+              </span>
+            </div>
+            <button
+              type="button"
+              role="switch"
+              aria-checked={draft.inbox}
+              aria-label="Deixar na Entrada"
+              className="switch"
+              onClick={() => patch({ inbox: !draft.inbox })}
+            />
+          </div>
         </div>
 
         <div className="row">
@@ -404,7 +551,7 @@ export function MemoryEditorScreen() {
             onClick={() => void submit()}
           >
             <Icon name="check" size={18} />
-            {saving ? 'Guardando…' : 'Guardar memória'}
+            {saving ? 'Guardando…' : draft.inbox ? 'Guardar na Entrada' : 'Guardar memória'}
           </button>
         </div>
       </div>

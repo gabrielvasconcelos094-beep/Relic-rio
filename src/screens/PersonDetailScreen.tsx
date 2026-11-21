@@ -24,15 +24,8 @@ export function PersonDetailScreen() {
   const { id } = useParams();
   const navigate = useNavigate();
   const { toast, confirm } = useUi();
-  const {
-    people,
-    memories,
-    categories,
-    attachments,
-    capsules,
-    settings,
-    deletePerson,
-  } = useArchive();
+  const archive = useArchive();
+  const { people, memories, categories, attachments, deletePerson } = archive;
   const [lens, setLens] = useState<Lens>('tudo');
   const [menu, setMenu] = useState(false);
 
@@ -112,13 +105,10 @@ export function PersonDetailScreen() {
   const exportPerson = async () => {
     setMenu(false);
     try {
-      const result = await createBackup(
-        { memories, people, categories, attachments, capsules, settings },
-        {
-          label: person.name,
-          subset: { memories: related, people: [person], capsules: [] },
-        },
-      );
+      const result = await createBackup(archive.snapshot(), {
+        label: person.name,
+        subset: { memories: related, people: [person], capsules: [], collections: [] },
+      });
       const how = await deliverFile(result.blob, result.filename);
       toast(
         how === 'shared'

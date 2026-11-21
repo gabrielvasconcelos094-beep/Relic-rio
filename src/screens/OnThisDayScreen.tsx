@@ -47,7 +47,7 @@ export function OnThisDayScreen() {
                     <div className="memory-body">
                       <h3>{m.title || 'Memória sem título'}</h3>
                       <div className="meta-line">
-                        <span>{formatCivil(m.occurredAt, m.occurredPrecision)}</span>
+                        <span>{formatCivil(m.occurredAt, m.occurredPrecision, m.occurredNote)}</span>
                         {names.length > 0 && (
                           <>
                             <span className="sep">·</span>

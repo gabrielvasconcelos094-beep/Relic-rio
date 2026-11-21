@@ -1,7 +1,15 @@
 /** Camada mínima de acesso ao IndexedDB, sem dependências externas. */
 
 export const DB_NAME = 'relicario';
-export const DB_VERSION = 1;
+
+/**
+ * Versão 1 → 2 (segunda etapa de desenvolvimento).
+ * A migração só ACRESCENTA stores e índices. Nenhuma linha existente é reescrita
+ * nem removida aqui: os campos novos recebem valor padrão na leitura
+ * (ver `normalize*` em db/archive.ts), o que mantém o arquivo do usuário intacto
+ * mesmo que a atualização seja interrompida no meio.
+ */
+export const DB_VERSION = 2;
 
 export const STORES = {
   memories: 'memories',
@@ -10,38 +18,66 @@ export const STORES = {
   attachments: 'attachments',
   capsules: 'capsules',
   settings: 'settings',
+  collections: 'collections',
+  sources: 'sources',
+  history: 'history',
+  reminders: 'reminders',
+  meta: 'meta',
 } as const;
 
 export type StoreName = (typeof STORES)[keyof typeof STORES];
 
+/** Todas as stores que guardam conteúdo do usuário (usadas em backup/restauração). */
+export const CONTENT_STORES: StoreName[] = [
+  STORES.memories,
+  STORES.people,
+  STORES.categories,
+  STORES.attachments,
+  STORES.capsules,
+  STORES.collections,
+  STORES.sources,
+  STORES.history,
+  STORES.reminders,
+];
+
 let dbPromise: Promise<IDBDatabase> | null = null;
 
-function upgrade(db: IDBDatabase) {
-  if (!db.objectStoreNames.contains(STORES.memories)) {
-    const s = db.createObjectStore(STORES.memories, { keyPath: 'id' });
-    s.createIndex('occurredAt', 'occurredAt');
-    s.createIndex('createdAt', 'createdAt');
-    s.createIndex('favorite', 'favorite');
-    s.createIndex('hardDay', 'hardDay');
-  }
-  if (!db.objectStoreNames.contains(STORES.people)) {
-    const s = db.createObjectStore(STORES.people, { keyPath: 'id' });
-    s.createIndex('name', 'name');
-  }
-  if (!db.objectStoreNames.contains(STORES.categories)) {
-    db.createObjectStore(STORES.categories, { keyPath: 'id' });
-  }
-  if (!db.objectStoreNames.contains(STORES.attachments)) {
-    const s = db.createObjectStore(STORES.attachments, { keyPath: 'id' });
-    s.createIndex('ownerId', 'ownerId');
-    s.createIndex('memoryId', 'memoryId');
-  }
-  if (!db.objectStoreNames.contains(STORES.capsules)) {
-    const s = db.createObjectStore(STORES.capsules, { keyPath: 'id' });
-    s.createIndex('openAt', 'openAt');
-  }
-  if (!db.objectStoreNames.contains(STORES.settings)) {
-    db.createObjectStore(STORES.settings, { keyPath: 'key' });
+/** Migração acumulativa: cada bloco roda apenas se a store/índice ainda não existe. */
+function upgrade(db: IDBDatabase, tx: IDBTransaction | null, oldVersion: number) {
+  const ensureStore = (name: string, keyPath: string) =>
+    db.objectStoreNames.contains(name) ? tx?.objectStore(name) : db.createObjectStore(name, { keyPath });
+
+  const ensureIndex = (store: IDBObjectStore | undefined, name: string, keyPath: string) => {
+    if (store && !store.indexNames.contains(name)) store.createIndex(name, keyPath);
+  };
+
+  // ---- v1 ----
+  const memories = ensureStore(STORES.memories, 'id');
+  ensureIndex(memories, 'occurredAt', 'occurredAt');
+  ensureIndex(memories, 'createdAt', 'createdAt');
+
+  const people = ensureStore(STORES.people, 'id');
+  ensureIndex(people, 'name', 'name');
+
+  ensureStore(STORES.categories, 'id');
+
+  const attachments = ensureStore(STORES.attachments, 'id');
+  ensureIndex(attachments, 'ownerId', 'ownerId');
+  ensureIndex(attachments, 'memoryId', 'memoryId');
+
+  const capsules = ensureStore(STORES.capsules, 'id');
+  ensureIndex(capsules, 'openAt', 'openAt');
+
+  ensureStore(STORES.settings, 'key');
+
+  // ---- v2 ----
+  if (oldVersion < 2) {
+    ensureStore(STORES.collections, 'id');
+    ensureStore(STORES.sources, 'id');
+    const history = ensureStore(STORES.history, 'id');
+    ensureIndex(history, 'memoryId', 'memoryId');
+    ensureStore(STORES.reminders, 'id');
+    ensureStore(STORES.meta, 'key');
   }
 }
 
@@ -53,13 +89,14 @@ export function openDB(): Promise<IDBDatabase> {
       return;
     }
     const req = indexedDB.open(DB_NAME, DB_VERSION);
-    req.onupgradeneeded = () => upgrade(req.result);
+    req.onupgradeneeded = (event) => upgrade(req.result, req.transaction, event.oldVersion);
     req.onsuccess = () => {
       req.result.onversionchange = () => req.result.close();
       resolve(req.result);
     };
     req.onerror = () => reject(req.error ?? new Error('Falha ao abrir o arquivo local.'));
-    req.onblocked = () => reject(new Error('O arquivo local está em uso por outra aba.'));
+    req.onblocked = () =>
+      reject(new Error('O arquivo local está em uso por outra aba. Feche-a e tente de novo.'));
   });
   return dbPromise;
 }
@@ -168,7 +205,11 @@ export async function clearStores(stores: StoreName[]): Promise<void> {
   );
 }
 
-/** Escreve em várias stores numa única transação (usado na restauração de backup). */
+/**
+ * Escreve em várias stores numa única transação. O IndexedDB garante atomicidade:
+ * se qualquer passo falhar, a transação é abortada e NADA é gravado. É assim que a
+ * restauração de backup evita deixar o arquivo do usuário num estado parcial.
+ */
 export async function transactWrite(
   stores: StoreName[],
   fn: (get: (s: StoreName) => IDBObjectStore) => Promise<unknown>,

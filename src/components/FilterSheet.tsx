@@ -1,4 +1,5 @@
-import type { Category, Person } from '@/db/types';
+import type { Category, Collection, DatePrecision, Person, Source } from '@/db/types';
+import { PRECISION_LABEL } from '@/utils/date';
 import { EMPTY_FILTERS, type Filters } from '@/utils/search';
 import { Sheet } from './ui';
 
@@ -9,6 +10,8 @@ interface Props {
   onChange: (f: Filters) => void;
   people: Person[];
   categories: Category[];
+  collections: Collection[];
+  sources: Source[];
   tags: string[];
   years: number[];
 }
@@ -24,6 +27,8 @@ export function FilterSheet({
   onChange,
   people,
   categories,
+  collections,
+  sources,
   tags,
   years,
 }: Props) {
@@ -69,6 +74,63 @@ export function FilterSheet({
               </button>
             ))}
             {people.length === 0 && <span className="faint small">Nenhuma pessoa registrada.</span>}
+          </div>
+        </div>
+
+        {collections.length > 0 && (
+          <div className="field">
+            <label>Coleções</label>
+            <div className="row-wrap">
+              {collections.map((c) => (
+                <button
+                  key={c.id}
+                  type="button"
+                  className="chip chip-toggle"
+                  aria-pressed={filters.collectionIds.includes(c.id)}
+                  onClick={() => set({ collectionIds: toggle(filters.collectionIds, c.id) })}
+                >
+                  <span
+                    className="chip-dot"
+                    style={{ background: `var(--cat-${c.color}, var(--cat-tinta))` }}
+                  />
+                  {c.name}
+                </button>
+              ))}
+            </div>
+          </div>
+        )}
+
+        <div className="field">
+          <label>Origem</label>
+          <div className="row-wrap">
+            {sources.map((s) => (
+              <button
+                key={s.id}
+                type="button"
+                className="chip chip-toggle"
+                aria-pressed={filters.sourceIds.includes(s.id)}
+                onClick={() => set({ sourceIds: toggle(filters.sourceIds, s.id) })}
+              >
+                {s.name}
+              </button>
+            ))}
+          </div>
+        </div>
+
+        <div className="field">
+          <label>Precisão da data</label>
+          <div className="row-wrap">
+            {(['day', 'month', 'year', 'approximate', 'unknown'] as DatePrecision[]).map((p) => (
+              <button
+                key={p}
+                type="button"
+                className="chip chip-toggle"
+                aria-pressed={filters.precisions.includes(p)}
+                onClick={() => set({ precisions: toggle(filters.precisions, p) })}
+              >
+                {PRECISION_LABEL[p]}
+              </button>
+            ))}
           </div>
         </div>
 
@@ -156,6 +218,14 @@ export function FilterSheet({
             onClick={() => set({ withImagesOnly: !filters.withImagesOnly })}
           >
             Com imagens
+          </button>
+          <button
+            type="button"
+            className="chip chip-toggle"
+            aria-pressed={filters.withFilesOnly}
+            onClick={() => set({ withFilesOnly: !filters.withFilesOnly })}
+          >
+            Com anexos
           </button>
         </div>
 

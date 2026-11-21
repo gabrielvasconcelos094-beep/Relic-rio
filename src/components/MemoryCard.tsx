@@ -91,7 +91,7 @@ export function MemoryCard({ memory, people, categories, attachments, onOpen }: 
         <div className="memory-body">
           <h3>{memory.title || 'Memória sem título'}</h3>
           <div className="meta-line">
-            <span>{formatCivil(memory.occurredAt, memory.occurredPrecision)}</span>
+            <span>{formatCivil(memory.occurredAt, memory.occurredPrecision, memory.occurredNote)}</span>
             {personNames.length > 0 && (
               <>
                 <span className="sep">·</span>

@@ -1,0 +1,392 @@
+/*
+ * Relicário — temas.
+ *
+ * Toda cor da interface vem dos tokens definidos aqui. Nenhum componente escreve
+ * cor literal: trocar de tema troca só este conjunto de variáveis, e a mudança
+ * alcança o aplicativo inteiro.
+ *
+ * Seletores: :root[data-theme='<tema>'][data-mode='light'|'dark'].
+ * O tema personalizado recebe os tokens por style inline em <html> (ThemeContext).
+ */
+
+/* ================================================================
+   RELICÁRIO — o tema original. Papel, tinta sépia, luz de fim de tarde.
+   ================================================================ */
+
+:root[data-theme='relicario'][data-mode='light'] {
+  --paper: #f7f2e9;
+  --paper-raised: #fffaf2;
+  --paper-sunken: #efe7da;
+  --ink: #2f2a24;
+  --ink-soft: #5d554b;
+  --ink-faint: #8b8276;
+  --line: #e1d7c7;
+  --line-strong: #cfc3af;
+  --accent: #8a6a52;
+  --accent-contrast: #fff8ef;
+  --accent-soft: #f0e4d8;
+  --sage: #7f8f7a;
+  --sage-soft: #e6ece2;
+  --terracotta: #b1705a;
+  --danger: #a5503f;
+  --shadow: 0 1px 2px rgba(60, 46, 32, 0.06);
+  --shadow-lift: 0 6px 20px rgba(60, 46, 32, 0.1);
+  --scrim: rgba(32, 25, 18, 0.42);
+  --lightbox-bg: #14110e;
+  --lightbox-ink: #f1e8da;
+
+  --cat-rosa: #b98a8a;
+  --cat-salvia: #7f8f7a;
+  --cat-terracota: #b1705a;
+  --cat-areia: #a9926f;
+  --cat-tinta: #7a7368;
+  --cat-musgo: #6f8168;
+
+  --font-display: 'Iowan Old Style', 'Palatino Linotype', Palatino, Georgia, 'Times New Roman', serif;
+  --font-ui: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+  --radius-s: 6px;
+  --radius-m: 12px;
+  --radius-l: 18px;
+}
+
+:root[data-theme='relicario'][data-mode='dark'] {
+  --paper: #191714;
+  --paper-raised: #22201c;
+  --paper-sunken: #141210;
+  --ink: #ece4d8;
+  --ink-soft: #b7ad9e;
+  --ink-faint: #897f71;
+  --line: #322e28;
+  --line-strong: #453f37;
+  --accent: #c9a384;
+  --accent-contrast: #1b1814;
+  --accent-soft: #2e2822;
+  --sage: #93a38c;
+  --sage-soft: #242a22;
+  --terracotta: #c98b73;
+  --danger: #d08273;
+  --shadow: 0 1px 2px rgba(0, 0, 0, 0.4);
+  --shadow-lift: 0 8px 24px rgba(0, 0, 0, 0.45);
+  --scrim: rgba(8, 6, 4, 0.62);
+  --lightbox-bg: #0d0b09;
+  --lightbox-ink: #f1e8da;
+
+  --cat-rosa: #c99c9c;
+  --cat-salvia: #93a38c;
+  --cat-terracota: #c98b73;
+  --cat-areia: #c0a884;
+  --cat-tinta: #a79d90;
+  --cat-musgo: #8b9c83;
+
+  --font-display: 'Iowan Old Style', 'Palatino Linotype', Palatino, Georgia, 'Times New Roman', serif;
+  --font-ui: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+  --radius-s: 6px;
+  --radius-m: 12px;
+  --radius-l: 18px;
+}
+
+/* ================================================================
+   HERBÁRIO — um álbum de botânica. Verdes de folha seca sobre papel
+   de algodão, tinta de caule, pontuações de ocre. Formas retas e
+   discretas, como etiquetas de coleção.
+   ================================================================ */
+
+:root[data-theme='herbario'][data-mode='light'] {
+  --paper: #f2f3ec;
+  --paper-raised: #fbfcf7;
+  --paper-sunken: #e5e8dd;
+  --ink: #232a22;
+  --ink-soft: #4e584a;
+  --ink-faint: #7d8878;
+  --line: #d7dccf;
+  --line-strong: #bcc4b1;
+  --accent: #46663f;
+  --accent-contrast: #f6faf2;
+  --accent-soft: #e2ead9;
+  --sage: #6c8460;
+  --sage-soft: #e4ecdc;
+  --terracotta: #9a7434;
+  --danger: #8f4434;
+  --shadow: 0 1px 2px rgba(35, 42, 34, 0.07);
+  --shadow-lift: 0 6px 18px rgba(35, 42, 34, 0.12);
+  --scrim: rgba(24, 30, 23, 0.44);
+  --lightbox-bg: #10140f;
+  --lightbox-ink: #e8eee2;
+
+  --cat-rosa: #a4756f;
+  --cat-salvia: #6c8460;
+  --cat-terracota: #9a7434;
+  --cat-areia: #92895f;
+  --cat-tinta: #5c6657;
+  --cat-musgo: #3f5c3a;
+
+  --font-display: 'Hoefler Text', 'Iowan Old Style', Georgia, 'Times New Roman', serif;
+  --font-ui: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+  --radius-s: 3px;
+  --radius-m: 5px;
+  --radius-l: 8px;
+}
+
+:root[data-theme='herbario'][data-mode='dark'] {
+  --paper: #13170f;
+  --paper-raised: #1c211a;
+  --paper-sunken: #0e1109;
+  --ink: #e3e9da;
+  --ink-soft: #a9b5a0;
+  --ink-faint: #7a8673;
+  --line: #2a3127;
+  --line-strong: #3b4436;
+  --accent: #9dbe8c;
+  --accent-contrast: #141a11;
+  --accent-soft: #232c1f;
+  --sage: #8ba67d;
+  --sage-soft: #1e261b;
+  --terracotta: #cba65f;
+  --danger: #cf7f68;
+  --shadow: 0 1px 2px rgba(0, 0, 0, 0.45);
+  --shadow-lift: 0 8px 22px rgba(0, 0, 0, 0.5);
+  --scrim: rgba(5, 8, 4, 0.64);
+  --lightbox-bg: #080b06;
+  --lightbox-ink: #e3e9da;
+
+  --cat-rosa: #c4968f;
+  --cat-salvia: #8ba67d;
+  --cat-terracota: #cba65f;
+  --cat-areia: #b5aa79;
+  --cat-tinta: #94a08c;
+  --cat-musgo: #7faa70;
+
+  --font-display: 'Hoefler Text', 'Iowan Old Style', Georgia, 'Times New Roman', serif;
+  --font-ui: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+  --radius-s: 3px;
+  --radius-m: 5px;
+  --radius-l: 8px;
+}
+
+/* ================================================================
+   CANDEIA — ler à luz de lamparina. Azul profundo de fim de noite e
+   um âmbar quente que só aparece onde importa. Cantos bem arredondados,
+   superfícies que parecem iluminadas de dentro.
+   ================================================================ */
+
+:root[data-theme='candeia'][data-mode='light'] {
+  --paper: #f1f0ea;
+  --paper-raised: #fbfaf6;
+  --paper-sunken: #e3e2db;
+  --ink: #1f2733;
+  --ink-soft: #4b5564;
+  --ink-faint: #7d8694;
+  --line: #d9d9d2;
+  --line-strong: #bdbdb5;
+  --accent: #9a6418;
+  --accent-contrast: #fff8ec;
+  --accent-soft: #f6e8d2;
+  --sage: #4a6a74;
+  --sage-soft: #dfe9eb;
+  --terracotta: #a85f3c;
+  --danger: #a1453f;
+  --shadow: 0 1px 2px rgba(31, 39, 51, 0.08);
+  --shadow-lift: 0 8px 24px rgba(31, 39, 51, 0.14);
+  --scrim: rgba(18, 24, 33, 0.46);
+  --lightbox-bg: #0c1018;
+  --lightbox-ink: #f2ead9;
+
+  --cat-rosa: #ab6f79;
+  --cat-salvia: #4a6a74;
+  --cat-terracota: #a85f3c;
+  --cat-areia: #94793f;
+  --cat-tinta: #5a6373;
+  --cat-musgo: #4e6b56;
+
+  --font-display: 'Iowan Old Style', Georgia, 'Times New Roman', serif;
+  --font-ui: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+  --radius-s: 10px;
+  --radius-m: 18px;
+  --radius-l: 26px;
+}
+
+:root[data-theme='candeia'][data-mode='dark'] {
+  --paper: #10151f;
+  --paper-raised: #1a2130;
+  --paper-sunken: #0a0e16;
+  --ink: #ebe4d6;
+  --ink-soft: #a9b2c2;
+  --ink-faint: #76829a;
+  --line: #252d3e;
+  --line-strong: #364055;
+  --accent: #e0a85c;
+  --accent-contrast: #15110a;
+  --accent-soft: #2a2316;
+  --sage: #7fa0ac;
+  --sage-soft: #16212a;
+  --terracotta: #d4885f;
+  --danger: #d9796f;
+  --shadow: 0 1px 2px rgba(0, 0, 0, 0.5);
+  --shadow-lift: 0 10px 30px rgba(0, 0, 0, 0.55);
+  --scrim: rgba(3, 6, 12, 0.66);
+  --lightbox-bg: #060910;
+  --lightbox-ink: #ebe4d6;
+
+  --cat-rosa: #c08f98;
+  --cat-salvia: #7fa0ac;
+  --cat-terracota: #d4885f;
+  --cat-areia: #c0a165;
+  --cat-tinta: #8e99ad;
+  --cat-musgo: #7ba188;
+
+  --font-display: 'Iowan Old Style', Georgia, 'Times New Roman', serif;
+  --font-ui: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+  --radius-s: 10px;
+  --radius-m: 18px;
+  --radius-l: 26px;
+}
+
+/* ================================================================
+   PORCELANA — louça fina guardada no armário. Brancos frios, azul de
+   decalque, rosa de esmalte. Linhas finíssimas, quase nenhuma sombra.
+   ================================================================ */
+
+:root[data-theme='porcelana'][data-mode='light'] {
+  --paper: #f6f6f8;
+  --paper-raised: #ffffff;
+  --paper-sunken: #ecedf1;
+  --ink: #23252e;
+  --ink-soft: #565a68;
+  --ink-faint: #878c9b;
+  --line: #e2e3ea;
+  --line-strong: #c8cad4;
+  --accent: #5a6a93;
+  --accent-contrast: #ffffff;
+  --accent-soft: #e6eaf3;
+  --sage: #6f8e92;
+  --sage-soft: #e3eced;
+  --terracotta: #a3677a;
+  --danger: #9c4b56;
+  --shadow: 0 1px 1px rgba(35, 37, 46, 0.05);
+  --shadow-lift: 0 4px 16px rgba(35, 37, 46, 0.09);
+  --scrim: rgba(28, 30, 38, 0.4);
+  --lightbox-bg: #121319;
+  --lightbox-ink: #eceef4;
+
+  --cat-rosa: #a3677a;
+  --cat-salvia: #6f8e92;
+  --cat-terracota: #9d7254;
+  --cat-areia: #8e8676;
+  --cat-tinta: #5a6a93;
+  --cat-musgo: #5f8073;
+
+  --font-display: 'Didot', 'Bodoni MT', 'Hoefler Text', Garamond, Georgia, serif;
+  --font-ui: 'Avenir Next', 'Segoe UI', -apple-system, BlinkMacSystemFont, Roboto, Arial, sans-serif;
+  --radius-s: 2px;
+  --radius-m: 4px;
+  --radius-l: 4px;
+}
+
+:root[data-theme='porcelana'][data-mode='dark'] {
+  --paper: #16171c;
+  --paper-raised: #1f2027;
+  --paper-sunken: #101116;
+  --ink: #eceef4;
+  --ink-soft: #b0b4c0;
+  --ink-faint: #7f8491;
+  --line: #2a2c35;
+  --line-strong: #3b3e4a;
+  --accent: #9fb0d8;
+  --accent-contrast: #15171d;
+  --accent-soft: #232735;
+  --sage: #8fb0b4;
+  --sage-soft: #1b2326;
+  --terracotta: #c9909f;
+  --danger: #cf7b87;
+  --shadow: 0 1px 1px rgba(0, 0, 0, 0.4);
+  --shadow-lift: 0 6px 20px rgba(0, 0, 0, 0.5);
+  --scrim: rgba(4, 5, 8, 0.62);
+  --lightbox-bg: #0a0b0f;
+  --lightbox-ink: #eceef4;
+
+  --cat-rosa: #c9909f;
+  --cat-salvia: #8fb0b4;
+  --cat-terracota: #c19a7c;
+  --cat-areia: #b3ab98;
+  --cat-tinta: #9fb0d8;
+  --cat-musgo: #87a89a;
+
+  --font-display: 'Didot', 'Bodoni MT', 'Hoefler Text', Garamond, Georgia, serif;
+  --font-ui: 'Avenir Next', 'Segoe UI', -apple-system, BlinkMacSystemFont, Roboto, Arial, sans-serif;
+  --radius-s: 2px;
+  --radius-m: 4px;
+  --radius-l: 4px;
+}
+
+/* ================================================================
+   PERSONALIZADO — herda a estrutura do tema original; os tokens de cor
+   são sobrescritos em <html style="..."> a partir das escolhas do usuário.
+   ================================================================ */
+
+:root[data-theme='custom'][data-mode='light'] {
+  --paper: #f7f2e9;
+  --paper-raised: #fffaf2;
+  --paper-sunken: #efe7da;
+  --ink: #2f2a24;
+  --ink-soft: #5d554b;
+  --ink-faint: #8b8276;
+  --line: #e1d7c7;
+  --line-strong: #cfc3af;
+  --accent: #8a6a52;
+  --accent-contrast: #fff8ef;
+  --accent-soft: #f0e4d8;
+  --sage: #7f8f7a;
+  --sage-soft: #e6ece2;
+  --terracotta: #b1705a;
+  --danger: #a5503f;
+  --shadow: 0 1px 2px rgba(60, 46, 32, 0.06);
+  --shadow-lift: 0 6px 20px rgba(60, 46, 32, 0.1);
+  --scrim: rgba(32, 25, 18, 0.42);
+  --lightbox-bg: #14110e;
+  --lightbox-ink: #f1e8da;
+  --cat-rosa: #b98a8a;
+  --cat-salvia: #7f8f7a;
+  --cat-terracota: #b1705a;
+  --cat-areia: #a9926f;
+  --cat-tinta: #7a7368;
+  --cat-musgo: #6f8168;
+  --font-display: 'Iowan Old Style', 'Palatino Linotype', Palatino, Georgia, 'Times New Roman', serif;
+  --font-ui: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+  --radius-s: 6px;
+  --radius-m: 12px;
+  --radius-l: 18px;
+}
+
+:root[data-theme='custom'][data-mode='dark'] {
+  --paper: #191714;
+  --paper-raised: #22201c;
+  --paper-sunken: #141210;
+  --ink: #ece4d8;
+  --ink-soft: #b7ad9e;
+  --ink-faint: #897f71;
+  --line: #322e28;
+  --line-strong: #453f37;
+  --accent: #c9a384;
+  --accent-contrast: #1b1814;
+  --accent-soft: #2e2822;
+  --sage: #93a38c;
+  --sage-soft: #242a22;
+  --terracotta: #c98b73;
+  --danger: #d08273;
+  --shadow: 0 1px 2px rgba(0, 0, 0, 0.4);
+  --shadow-lift: 0 8px 24px rgba(0, 0, 0, 0.45);
+  --scrim: rgba(8, 6, 4, 0.62);
+  --lightbox-bg: #0d0b09;
+  --lightbox-ink: #f1e8da;
+  --cat-rosa: #c99c9c;
+  --cat-salvia: #93a38c;
+  --cat-terracota: #c98b73;
+  --cat-areia: #c0a884;
+  --cat-tinta: #a79d90;
+  --cat-musgo: #8b9c83;
+  --font-display: 'Iowan Old Style', 'Palatino Linotype', Palatino, Georgia, 'Times New Roman', serif;
+  --font-ui: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+  --radius-s: 6px;
+  --radius-m: 12px;
+  --radius-l: 18px;
+}

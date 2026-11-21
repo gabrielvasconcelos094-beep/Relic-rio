@@ -14,7 +14,8 @@ type Scope =
   | 'favoritas'
   | 'abrigo'
   | 'pessoa'
-  | 'categoria';
+  | 'categoria'
+  | 'colecao';
 
 const SCOPES: { key: Scope; label: string }[] = [
   { key: 'qualquer', label: 'Qualquer memória' },
@@ -25,14 +26,16 @@ const SCOPES: { key: Scope; label: string }[] = [
   { key: 'abrigo', label: 'Para os dias difíceis' },
   { key: 'pessoa', label: 'De uma pessoa' },
   { key: 'categoria', label: 'De uma categoria' },
+  { key: 'colecao', label: 'De uma coleção' },
 ];
 
 export function SurpriseScreen() {
-  const { memories, people, categories, attachments } = useArchive();
+  const { memories, people, categories, collections, attachments } = useArchive();
   const navigate = useNavigate();
   const [scope, setScope] = useState<Scope>('qualquer');
   const [personId, setPersonId] = useState('');
   const [categoryId, setCategoryId] = useState('');
+  const [collectionId, setCollectionId] = useState('');
   const [current, setCurrent] = useState<string | null>(null);
   const [seen, setSeen] = useState<string[]>([]);
 
@@ -58,10 +61,12 @@ export function SurpriseScreen() {
         return personId ? memories.filter((m) => m.personIds.includes(personId)) : [];
       case 'categoria':
         return categoryId ? memories.filter((m) => m.categoryIds.includes(categoryId)) : [];
+      case 'colecao':
+        return collectionId ? memories.filter((m) => m.collectionIds.includes(collectionId)) : [];
       default:
         return memories;
     }
-  }, [scope, memories, imageOwners, categories, personId, categoryId]);
+  }, [scope, memories, imageOwners, categories, personId, categoryId, collectionId]);
 
   const draw = () => {
     const chosen = pickRandom(eligible, seen, (m) => m.id);
@@ -144,6 +149,29 @@ export function SurpriseScreen() {
             >
               <option value="">Selecione…</option>
               {categories.map((c) => (
+                <option key={c.id} value={c.id}>
+                  {c.name}
+                </option>
+              ))}
+            </select>
+          </div>
+        )}
+
+        {scope === 'colecao' && (
+          <div className="field">
+            <label htmlFor="escolha-colecao">Coleção</label>
+            <select
+              id="escolha-colecao"
+              className="input"
+              value={collectionId}
+              onChange={(e) => {
+                setCollectionId(e.target.value);
+                setCurrent(null);
+                setSeen([]);
+              }}
+            >
+              <option value="">Selecione…</option>
+              {collections.map((c) => (
                 <option key={c.id} value={c.id}>
                   {c.name}
                 </option>

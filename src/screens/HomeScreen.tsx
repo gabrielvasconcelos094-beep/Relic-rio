@@ -17,7 +17,7 @@ function memoryOfTheDay<T>(items: T[], seed: string): T | null {
 }
 
 export function HomeScreen() {
-  const { memories, people, categories, attachments } = useArchive();
+  const { memories, people, categories, attachments, settings, inbox } = useArchive();
   const navigate = useNavigate();
 
   const today = todayCivil();
@@ -46,6 +46,25 @@ export function HomeScreen() {
       </div>
 
       <div className="page stack-lg">
+        {inbox.length > 0 && (
+          <Link
+            to="/entrada"
+            className="card card-pad"
+            style={{ textDecoration: 'none', display: 'block' }}
+          >
+            <div className="row">
+              <Icon name="upload" style={{ color: 'var(--accent)' }} />
+              <div style={{ flex: 1 }}>
+                <strong style={{ display: 'block', fontSize: '0.95rem' }}>
+                  {inbox.length} {inbox.length === 1 ? 'registro aguarda' : 'registros aguardam'} na Entrada
+                </strong>
+                <span className="tiny faint">Organize quando quiser — nada se perde.</span>
+              </div>
+              <Icon name="forward" size={16} style={{ color: 'var(--ink-faint)' }} />
+            </div>
+          </Link>
+        )}
+
         {memories.length === 0 ? (
           <EmptyState
             icon="book"
@@ -59,6 +78,7 @@ export function HomeScreen() {
             }
           />
         ) : (
+          settings.homeShowFeatured &&
           featured && (
             <section className="feature-card">
               <div className="kicker">Memória do dia</div>
@@ -67,7 +87,13 @@ export function HomeScreen() {
               </h2>
               {featured.text && <blockquote>{snippet(featured.text, 220)}</blockquote>}
               <div className="meta-line" style={{ marginTop: 12 }}>
-                <span>{formatCivil(featured.occurredAt, featured.occurredPrecision)}</span>
+                <span>
+                  {formatCivil(
+                    featured.occurredAt,
+                    featured.occurredPrecision,
+                    featured.occurredNote,
+                  )}
+                </span>
                 {featuredPeople.length > 0 && (
                   <>
                     <span className="sep">·</span>
@@ -87,6 +113,7 @@ export function HomeScreen() {
           )
         )}
 
+        {settings.homeShowQuickTiles && (
         <section className="quick-grid">
           <Link to="/hoje-no-passado" className="quick-tile">
             <Icon name="clock" />
@@ -117,8 +144,9 @@ export function HomeScreen() {
             <span>Cápsulas para abrir mais adiante</span>
           </Link>
         </section>
+        )}
 
-        {recent.length > 0 && (
+        {settings.homeShowRecent && recent.length > 0 && (
           <section>
             <div className="section-title">
               <h2>Guardado recentemente</h2>

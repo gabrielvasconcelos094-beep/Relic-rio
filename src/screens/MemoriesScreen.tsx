@@ -6,27 +6,39 @@ import { MemoryCard } from '@/components/MemoryCard';
 import { EmptyState, BlobImage } from '@/components/ui';
 import { FilterSheet } from '@/components/FilterSheet';
 import { Lightbox } from '@/components/Lightbox';
-import { EMPTY_FILTERS, applyFilters, filtersActive, type Filters } from '@/utils/search';
+import {
+  EMPTY_FILTERS,
+  SearchIndex,
+  applyFilters,
+  filtersActive,
+  type Filters,
+} from '@/utils/search';
 import { galleryEntries, groupForTimeline } from '@/utils/selectors';
-import { MONTHS_PT, parseCivil } from '@/utils/date';
+import { MONTHS_PT, formatCivil, parseCivil } from '@/utils/date';
+import { CalendarView } from '@/components/CalendarView';
 
-type View = 'lista' | 'linha' | 'galeria';
+type View = 'lista' | 'linha' | 'calendario' | 'galeria';
 
 export function MemoriesScreen() {
-  const { memories, people, categories, attachments, allTags } = useArchive();
+  const { memories, people, categories, collections, sources, attachments, allTags, settings } =
+    useArchive();
   const navigate = useNavigate();
   const [params, setParams] = useSearchParams();
 
   const initialView = (params.get('ver') as View) || 'lista';
   const [view, setView] = useState<View>(
-    ['lista', 'linha', 'galeria'].includes(initialView) ? initialView : 'lista',
+    ['lista', 'linha', 'calendario', 'galeria'].includes(initialView) ? initialView : 'lista',
   );
+  const [calendarDay, setCalendarDay] = useState<string | null>(null);
   const [filters, setFilters] = useState<Filters>(() => ({
     ...EMPTY_FILTERS,
     categoryIds: params.get('categoria') ? [params.get('categoria')!] : [],
     tags: params.get('tag') ? [params.get('tag')!] : [],
     personIds: params.get('pessoa') ? [params.get('pessoa')!] : [],
+    collectionIds: params.get('colecao') ? [params.get('colecao')!] : [],
+    sourceIds: params.get('origem') ? [params.get('origem')!] : [],
     favoritesOnly: params.get('favoritas') === '1',
+    hardDayOnly: params.get('abrigo') === '1',
   }));
   const [sheetOpen, setSheetOpen] = useState(false);
   const [lightbox, setLightbox] = useState<number | null>(null);
@@ -40,10 +52,29 @@ export function MemoriesScreen() {
     return [...set].sort((a, b) => b - a);
   }, [memories]);
 
-  const results = useMemo(
-    () => applyFilters(memories, filters, { people, categories, attachments }),
-    [memories, filters, people, categories, attachments],
+  const searchCtx = useMemo(
+    () => ({ people, categories, collections, sources, attachments }),
+    [people, categories, collections, sources, attachments],
   );
+
+  // O índice é refeito só quando os dados mudam, não a cada tecla digitada.
+  const index = useMemo(() => new SearchIndex(memories, searchCtx), [memories, searchCtx]);
+
+  const results = useMemo(
+    () => applyFilters(memories, filters, searchCtx, index, settings.defaultSort),
+    [memories, filters, searchCtx, index, settings.defaultSort],
+  );
+
+  const dayMemories = useMemo(() => {
+    if (!calendarDay) return [];
+    if (calendarDay.length === 7) {
+      // Seleção de um mês inteiro (registros sem dia exato).
+      return results.filter(
+        (m) => m.occurredAt?.startsWith(calendarDay) && m.occurredPrecision !== 'day',
+      );
+    }
+    return results.filter((m) => m.occurredAt === calendarDay && m.occurredPrecision === 'day');
+  }, [calendarDay, results]);
 
   const timeline = useMemo(() => groupForTimeline(results), [results]);
   const gallery = useMemo(() => galleryEntries(results, attachments), [results, attachments]);
@@ -112,6 +143,13 @@ export function MemoriesScreen() {
           </button>
           <button
             type="button"
+            aria-pressed={view === 'calendario'}
+            onClick={() => changeView('calendario')}
+          >
+            Calendário
+          </button>
+          <button
+            type="button"
             aria-pressed={view === 'galeria'}
             onClick={() => changeView('galeria')}
           >
@@ -129,6 +167,16 @@ export function MemoriesScreen() {
             {filters.personIds.map((id) => (
               <span key={id} className="chip">
                 {people.find((p) => p.id === id)?.name ?? 'Pessoa'}
+              </span>
+            ))}
+            {filters.collectionIds.map((id) => (
+              <span key={id} className="chip">
+                {collections.find((c) => c.id === id)?.name ?? 'Coleção'}
+              </span>
+            ))}
+            {filters.sourceIds.map((id) => (
+              <span key={id} className="chip">
+                {sources.find((s) => s.id === id)?.name ?? 'Origem'}
               </span>
             ))}
             {filters.tags.map((t) => (
@@ -216,6 +264,43 @@ export function MemoriesScreen() {
               </section>
             ))}
           </div>
+        ) : view === 'calendario' ? (
+          <div>
+            <CalendarView
+              memories={results}
+              selected={calendarDay}
+              onSelectDay={(date) => setCalendarDay((c) => (c === date ? null : date))}
+            />
+            {calendarDay && (
+              <section style={{ marginTop: 18 }}>
+                <div className="section-title" style={{ marginTop: 0 }}>
+                  <h2>
+                    {calendarDay.length === 7
+                      ? `${MONTHS_PT[Number(calendarDay.slice(5, 7)) - 1]} de ${calendarDay.slice(0, 4)}`
+                      : formatCivil(calendarDay)}
+                  </h2>
+                  <button type="button" className="link" onClick={() => setCalendarDay(null)}>
+                    Fechar
+                  </button>
+                </div>
+                {dayMemories.length === 0 ? (
+                  <p className="muted small">Nenhum registro nesta data.</p>
+                ) : (
+                  <div className="stack">
+                    {dayMemories.map((m) => (
+                      <MemoryCard
+                        key={m.id}
+                        memory={m}
+                        people={people}
+                        categories={categories}
+                        attachments={attachments}
+                      />
+                    ))}
+                  </div>
+                )}
+              </section>
+            )}
+          </div>
         ) : gallery.length === 0 ? (
           <EmptyState
             icon="image"
@@ -223,7 +308,13 @@ export function MemoriesScreen() {
             description="As fotografias e capturas de tela anexadas às memórias aparecem aqui."
           />
         ) : (
-          <div className="gallery-grid" style={{ marginTop: 4 }}>
+          <div
+            className="gallery-grid"
+            style={{
+              marginTop: 4,
+              gridTemplateColumns: `repeat(${settings.galleryColumns}, 1fr)`,
+            }}
+          >
             {gallery.map((entry, i) => (
               <button
                 key={entry.attachment.id}
@@ -246,6 +337,8 @@ export function MemoriesScreen() {
         onChange={setFilters}
         people={people}
         categories={categories}
+        collections={collections}
+        sources={sources}
         tags={allTags}
         years={years}
       />

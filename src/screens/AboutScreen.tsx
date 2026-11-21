@@ -12,7 +12,7 @@ export function AboutScreen() {
             Relicário
           </h1>
           <p className="muted small" style={{ marginTop: 6 }}>
-            Um arquivo pessoal de afeto, palavras e memórias. Versão 1.0.
+            Um arquivo pessoal de afeto, palavras e memórias. Versão 2.0.
           </p>
         </header>
 
@@ -36,6 +36,8 @@ export function AboutScreen() {
               'Nenhum dado é coletado, analisado ou usado para publicidade.',
               'O aplicativo funciona sem conexão com a internet.',
               'Os backups são gerados por você e ficam onde você escolher.',
+              'O texto de PDFs é extraído no próprio aparelho, só para a busca.',
+              'As notificações são locais, agendadas pelo Android, sem servidor.',
             ].map((line) => (
               <div key={line} className="row" style={{ alignItems: 'flex-start' }}>
                 <Icon name="check" size={16} style={{ color: 'var(--sage)', marginTop: 3 }} />
@@ -53,18 +55,26 @@ export function AboutScreen() {
           </div>
           <div className="card card-pad">
             <p className="small muted">
-              O aplicativo não envia notificações. As cápsulas de memórias ficam lacradas até a data
-              escolhida e podem gerar um lembrete de calendário (.ics) que você adiciona ao
-              calendário do aparelho — é um lembrete real, do sistema, não uma notificação
-              simulada.
+              As notificações, o recebimento por compartilhamento e o widget da tela inicial
+              funcionam no aplicativo Android instalado. Abrindo pelo navegador, o Relicário avisa
+              que esses recursos estão indisponíveis em vez de fingir que funcionam.
+            </p>
+            <p className="small muted" style={{ marginTop: 10 }}>
+              As cápsulas também geram um lembrete de calendário (.ics) que você adiciona ao
+              calendário do aparelho — útil mesmo com as notificações desligadas.
             </p>
             <p className="small muted" style={{ marginTop: 10 }}>
               A biometria depende do suporte do aparelho. Quando ele não oferece, a opção aparece
               desativada e o PIN continua funcionando.
             </p>
             <p className="small muted" style={{ marginTop: 10 }}>
+              Não há OCR: o texto é extraído de PDFs que já contêm texto e de arquivos de texto.
+              Imagens e documentos digitalizados não são processados.
+            </p>
+            <p className="small muted" style={{ marginTop: 10 }}>
               Se o armazenamento do aplicativo for apagado nas configurações do sistema, os
-              registros vão com ele. Faça backups.
+              registros vão com ele. Faça backups — e guarde bem a senha, se usar um backup
+              criptografado: sem ela não há recuperação.
             </p>
           </div>
         </section>

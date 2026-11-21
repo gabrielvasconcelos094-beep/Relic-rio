@@ -9,8 +9,17 @@ import { KIND_LABEL } from '@/components/Attachments';
 import { loadDemoData } from '@/utils/demo';
 
 export function StorageScreen() {
-  const { memories, people, attachments, capsules, wipeArchive, removeDemoData, reload } =
-    useArchive();
+  const {
+    allMemories,
+    people,
+    attachments,
+    capsules,
+    collections,
+    wipeArchive,
+    removeDemoData,
+    reload,
+  } = useArchive();
+  const memories = allMemories;
   const { toast, confirm } = useUi();
   const [quota, setQuota] = useState<{ usage: number; quota: number } | null>(null);
   const [persisted, setPersisted] = useState<boolean | null>(null);
@@ -32,12 +41,56 @@ export function StorageScreen() {
     return [...map.entries()].sort((a, b) => b[1].bytes - a[1].bytes);
   }, [attachments]);
 
+  /** Arquivos que não pertencem mais a nenhum registro. Nunca apagados sozinhos. */
+  const orphans = useMemo(() => {
+    const memoryIds = new Set(allMemories.map((m) => m.id));
+    const personIds = new Set(people.map((p) => p.id));
+    const capsuleIds = new Set(capsules.map((c) => c.id));
+    const collectionIds = new Set(collections.map((c) => c.id));
+    return attachments.filter((a) => {
+      switch (a.ownerKind) {
+        case 'memory':
+          return !memoryIds.has(a.ownerId);
+        case 'person':
+          return !personIds.has(a.ownerId);
+        case 'capsule':
+          return !capsuleIds.has(a.ownerId);
+        case 'collection':
+          return !collectionIds.has(a.ownerId);
+        default:
+          return true;
+      }
+    });
+  }, [attachments, allMemories, people, capsules, collections]);
+
+  const largest = useMemo(
+    () =>
+      [...attachments]
+        .sort((a, b) => b.size - a.size)
+        .slice(0, 8)
+        .filter((a) => a.size > 0),
+    [attachments],
+  );
+
+  const ownerLabel = (ownerId: string) => {
+    const memory = allMemories.find((m) => m.id === ownerId);
+    if (memory) return memory.title || 'Memória sem título';
+    const person = people.find((p) => p.id === ownerId);
+    if (person) return person.name;
+    const collection = collections.find((c) => c.id === ownerId);
+    if (collection) return collection.name;
+    const capsule = capsules.find((c) => c.id === ownerId);
+    if (capsule) return capsule.title || 'Cápsula';
+    return 'sem registro associado';
+  };
+
   const demoCount = useMemo(
     () =>
       memories.filter((m) => m.demo).length +
       people.filter((p) => p.demo).length +
-      capsules.filter((c) => c.demo).length,
-    [memories, people, capsules],
+      capsules.filter((c) => c.demo).length +
+      collections.filter((c) => c.demo).length,
+    [memories, people, capsules, collections],
   );
 
   const totalBytes = attachments.reduce((s, a) => s + a.size, 0);
@@ -175,6 +228,59 @@ export function StorageScreen() {
             )}
           </section>
         )}
+
+        {largest.length > 0 && (
+          <section>
+            <div className="section-title" style={{ marginTop: 0 }}>
+              <h2>Arquivos maiores</h2>
+            </div>
+            <div className="card card-pad list-divided">
+              {largest.map((a) => (
+                <div key={a.id} className="link-row" style={{ padding: '10px 2px' }}>
+                  <Icon name="file" />
+                  <span className="label">
+                    <strong style={{ wordBreak: 'break-word' }}>{a.name}</strong>
+                    <span>{ownerLabel(a.ownerId)}</span>
+                  </span>
+                  <span className="small faint nowrap">{formatBytes(a.size)}</span>
+                </div>
+              ))}
+            </div>
+            <p className="tiny faint" style={{ marginTop: 8 }}>
+              Para liberar espaço, abra a memória e remova o anexo que não quiser mais. O
+              Relicário não recomprime nem substitui seus arquivos sozinho — o original é o que
+              está guardado.
+            </p>
+          </section>
+        )}
+
+        <section>
+          <div className="section-title" style={{ marginTop: 0 }}>
+            <h2>Arquivos órfãos</h2>
+            <span className="tiny faint">{orphans.length}</span>
+          </div>
+          {orphans.length === 0 ? (
+            <p className="muted small">
+              Nenhum arquivo solto: todos os anexos pertencem a um registro existente.
+            </p>
+          ) : (
+            <div className="card card-pad stack">
+              <p className="small">
+                {orphans.length}{' '}
+                {orphans.length === 1 ? 'arquivo não está' : 'arquivos não estão'} associados a
+                nenhum registro, somando{' '}
+                {formatBytes(orphans.reduce((s, a) => s + a.size, 0))}.
+              </p>
+              <p className="tiny faint">
+                Nada é apagado automaticamente. Em Verificar integridade você pode criar uma
+                memória para cada arquivo órfão e decidir o que fazer com ele.
+              </p>
+              <a className="btn btn-sm" href="#/configuracoes/integridade">
+                Abrir a verificação de integridade
+              </a>
+            </div>
+          )}
+        </section>
 
         <section>
           <div className="section-title" style={{ marginTop: 0 }}>

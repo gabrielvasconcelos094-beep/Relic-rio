@@ -3,4 +3,13 @@
     <color name="colorPrimary">#8A6A52</color>
     <color name="colorPrimaryDark">#6E543F</color>
     <color name="colorAccent">#B1705A</color>
+
+    <!-- Widget: paleta do tema Relicário, modo claro. -->
+    <color name="widget_paper">#FFFAF2</color>
+    <color name="widget_line">#E1D7C7</color>
+    <color name="widget_ink">#2F2A24</color>
+    <color name="widget_ink_soft">#5D554B</color>
+    <color name="widget_faint">#8B8276</color>
+    <color name="widget_accent">#8A6A52</color>
+    <color name="widget_button">#F0E4D8</color>
 </resources>

@@ -6,6 +6,8 @@ import { App } from './App';
 import { ArchiveProvider } from '@/state/ArchiveContext';
 import { UiProvider } from '@/state/UiContext';
 import { LockProvider } from '@/state/LockContext';
+import { ThemeProvider } from '@/state/ThemeContext';
+import { ShareProvider } from '@/state/ShareContext';
 
 const container = document.getElementById('root');
 if (!container) throw new Error('Elemento raiz não encontrado.');
@@ -15,9 +17,13 @@ createRoot(container).render(
     <HashRouter>
       <UiProvider>
         <ArchiveProvider>
-          <LockProvider>
-            <App />
-          </LockProvider>
+          <ThemeProvider>
+            <LockProvider>
+              <ShareProvider>
+                <App />
+              </ShareProvider>
+            </LockProvider>
+          </ThemeProvider>
         </ArchiveProvider>
       </UiProvider>
     </HashRouter>

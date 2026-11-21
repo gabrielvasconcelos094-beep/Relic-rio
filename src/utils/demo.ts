@@ -5,9 +5,11 @@
  */
 import { put } from '@/db/idb';
 import { STORES } from '@/db/idb';
-import type { Attachment, Capsule, Memory, Person } from '@/db/types';
+import type { Attachment, Capsule, Collection, Memory, Person } from '@/db/types';
+import { emptyMemory } from '@/db/archive';
 import { newId } from './id';
 import { todayCivil } from './date';
+import { sha256Blob } from './hash';
 
 function tintedImage(label: string, from: string, to: string): Promise<Blob | null> {
   const canvas = document.createElement('canvas');
@@ -76,20 +78,9 @@ export async function loadDemoData(): Promise<{ memories: number; people: number
   ];
 
   const base = (over: Partial<Memory>): Memory => ({
-    id: newId('mem'),
-    title: '',
-    occurredAt: null,
-    occurredPrecision: 'day',
+    ...emptyMemory(),
     createdAt: ts,
     updatedAt: ts,
-    categoryIds: [],
-    personIds: [],
-    tags: [],
-    text: '',
-    feeling: '',
-    context: '',
-    favorite: false,
-    hardDay: false,
     demo: true,
     ...over,
   });
@@ -101,6 +92,7 @@ export async function loadDemoData(): Promise<{ memories: number; people: number
       categoryIds: ['cat_aniversarios', 'cat_palavras'],
       personIds: [people[0].id],
       tags: ['carta', 'alguém se lembrou de mim'],
+      sourceId: 'src_carta',
       text:
         'Escrevi à mão porque teclado nenhum daria conta. Obrigada por ter ficado, mesmo nos anos em que eu não era fácil de acompanhar. Você é das pessoas que eu escolheria de novo.',
       feeling: 'Chorei no meio da leitura e depois reli duas vezes.',
@@ -138,6 +130,7 @@ export async function loadDemoData(): Promise<{ memories: number; people: number
       categoryIds: ['cat_palavras', 'cat_conquistas'],
       personIds: [people[2].id],
       tags: ['trabalho'],
+      sourceId: 'src_whatsapp',
       text:
         '“Você tem um jeito de explicar que faz as pessoas deixarem de ter medo da pergunta.” Anotei no celular ali mesmo para não esquecer.',
     }),
@@ -156,6 +149,8 @@ export async function loadDemoData(): Promise<{ memories: number; people: number
       categoryIds: ['cat_momentos', 'cat_amizade'],
       personIds: [people[0].id, people[2].id],
       tags: ['reencontro'],
+      occurredPrecision: 'approximate',
+      occurredNote: 'no fim daquela viagem',
       text: 'Sentamos na calçada até tarde. Ninguém falou sobre o tempo que passou — não era necessário.',
       context: 'Foi no fim de uma viagem que eu quase não fiz.',
     }),
@@ -163,6 +158,7 @@ export async function loadDemoData(): Promise<{ memories: number; people: number
       title: 'Obrigado pelo bilhete na porta',
       occurredAt: shiftYear(2, 6, 3),
       occurredPrecision: 'month',
+      sourceId: 'src_outro',
       categoryIds: ['cat_gentilezas', 'cat_gratidao'],
       tags: ['gentileza de desconhecido'],
       text: 'Alguém do prédio deixou um bilhete dizendo que a música que eu toco de manhã melhora o dia dela.',
@@ -194,9 +190,31 @@ export async function loadDemoData(): Promise<{ memories: number; people: number
       caption: img.caption,
       createdAt: ts,
       blob,
+      sha256: await sha256Blob(blob),
+      textContent: '',
+      personId: null,
+      occurredAt: null,
+      sourceId: null,
       demo: true,
     };
     await put(STORES.attachments, att);
+  }
+
+  const collection: Collection = {
+    id: newId('col'),
+    name: 'Coisas bonitas que me disseram',
+    description: 'Palavras que eu quero poder reler.',
+    color: 'rosa',
+    icon: 'heart',
+    coverId: null,
+    createdAt: ts,
+    updatedAt: ts,
+    demo: true,
+  };
+  await put(STORES.collections, collection);
+  for (const index of [0, 3, 6]) {
+    const m = memories[index];
+    await put(STORES.memories, { ...m, collectionIds: [collection.id] });
   }
 
   const capsule: Capsule = {

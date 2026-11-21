@@ -4,4 +4,13 @@
     <string name="title_activity_main">Relicário</string>
     <string name="package_name">app.relicario.arquivo</string>
     <string name="custom_url_scheme">app.relicario.arquivo</string>
+    <string name="widget_label">Relicário</string>
+    <string name="widget_description">Uma memória guardada, à mão na tela inicial.</string>
+    <string name="widget_image_description">Imagem da memória em destaque</string>
+    <string name="widget_private_title">Relicário</string>
+    <string name="widget_private_body">O conteúdo fica oculto. Toque para abrir o arquivo.</string>
+    <string name="widget_add">Guardar</string>
+    <string name="widget_shuffle">Surpresa</string>
+    <string name="widget_shelter">Abrigo</string>
+    <string name="share_target_label">Guardar no Relicário</string>
 </resources>

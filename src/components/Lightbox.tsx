@@ -60,7 +60,7 @@ export function Lightbox({ entries, index, onIndexChange, onClose }: Props) {
               {entry.memory.title || 'Memória sem título'}
             </strong>
             <span className="tiny">
-              {formatCivil(entry.memory.occurredAt, entry.memory.occurredPrecision)}
+              {formatCivil(entry.memory.occurredAt, entry.memory.occurredPrecision, entry.memory.occurredNote)}
               {entry.attachment.caption ? ` · ${entry.attachment.caption}` : ''}
             </span>
           </div>

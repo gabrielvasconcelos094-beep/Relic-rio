@@ -1,6 +1,6 @@
 # Relicário
 
-Um arquivo pessoal e privado de afeto, palavras e memórias.
+Um arquivo pessoal e privado de afeto, palavras e memórias. **Versão 2.0.**
 
 Relicário guarda o que alguém lhe disse, o que alguém fez, as cartas, as fotografias e os
 pequenos acontecimentos que costumam se perder em conversas e galerias. Tudo fica no próprio
@@ -9,6 +9,31 @@ aparelho: não existe conta, servidor nem sincronização.
 ---
 
 ## O que está implementado
+
+### Segunda etapa (2.0)
+
+| Área | Situação |
+| --- | --- |
+| Recebimento por compartilhamento do Android | intent filters SEND/SEND_MULTIPLE, plugin nativo que copia os Content URIs para o armazenamento privado e fila persistente em disco |
+| Caixa de Entrada | com contador na barra inferior, organização em lote e nada apagado automaticamente |
+| Coleções personalizadas | nome, descrição, capa, cor, ícone; uma memória em várias coleções, sem duplicar arquivos |
+| Calendário de memórias | navegação por mês e ano, dias marcados com contagem, integrado à mesma busca e filtros da linha do tempo |
+| Precisão temporal | dia exato, mês e ano, só o ano, data aproximada e data desconhecida — guardadas e exibidas sem inventar o que falta |
+| Origem do registro | lista editável; preenchida sozinha só quando o pacote de quem compartilhou é reconhecido |
+| Histórico das memórias | o que mudou e quando, com restauração do valor anterior |
+| Lixeira | retenção de 30 dias, prazo visível, restauração com anexos, exclusão definitiva confirmada |
+| Backup v2 | manifesto com SHA-256 por anexo, verificação antes de restaurar, restauração atômica, mesclagem ou substituição |
+| Backup criptografado | AES-256-GCM com chave derivada por PBKDF2-SHA256 (310 mil iterações, salt aleatório) |
+| Verificação de integridade | registros incompletos, referências quebradas, anexos ausentes, arquivos órfãos, conferência byte a byte opcional |
+| Busca avançada | inclui coleções, origem, nome de arquivo e o texto extraído de PDFs e arquivos de texto |
+| Notificações locais | hoje no passado, cápsulas e lembretes, com controle de privacidade do conteúdo |
+| Widget Android | widget real da tela inicial, com modo discreto que não revela nada |
+| Quatro temas + cores próprias | Relicário, Herbário, Candeia, Porcelana e paleta personalizada com conferência de contraste |
+| Tipografia e acessibilidade | quatro tamanhos de letra, rótulos acessíveis, áreas de toque e movimento reduzido |
+| Preferências de visualização | densidade da lista, estilo dos cartões, colunas da galeria, ordem padrão, seções da tela inicial |
+| Migração de banco versionada | v1 → v2 apenas acrescenta stores; nenhuma linha antiga é reescrita |
+
+### Primeira etapa (1.0), preservada
 
 | Área | Situação |
 | --- | --- |
@@ -34,12 +59,20 @@ aparelho: não existe conta, servidor nem sincronização.
 
 ### Limites declarados
 
-- **Não há notificações.** As cápsulas ficam lacradas até a data escolhida e geram um arquivo
-  `.ics` que você adiciona ao calendário do aparelho. É um lembrete real do sistema, não uma
-  notificação simulada.
+- **Compartilhamento, notificações e widget exigem o aplicativo Android instalado.** O código
+  nativo está no repositório e compila no APK; no navegador esses recursos aparecem como
+  indisponíveis, com o motivo, em vez de simulados.
+- **Compartilhamento e widget não foram testados num aparelho real** neste ambiente (não há
+  emulador nem dispositivo). O que foi verificado: o APK compila, os intent filters
+  `SEND`/`SEND_MULTIPLE` e o `receiver` do widget estão presentes no manifesto empacotado.
 - **A biometria depende do aparelho** (WebAuthn com autenticador de plataforma). Quando não há
   suporte, a opção aparece desativada e explica o motivo; o PIN continua funcionando.
-- **O PIN não entra no backup** e não pode ser recuperado se esquecido.
+- **O PIN não entra no backup** e não pode ser recuperado se esquecido. A senha de um backup
+  criptografado também não: sem ela o arquivo é irrecuperável.
+- **Não há OCR.** O texto é extraído de PDFs que já contêm camada de texto e de arquivos de
+  texto, localmente. Imagens e digitalizações não são processadas.
+- **Imagens não são recomprimidas.** O gerenciamento de armazenamento mostra os arquivos
+  maiores e os órfãos, mas não substitui nenhum original automaticamente.
 - Os dados de demonstração são opcionais, ficam marcados e podem ser removidos de uma vez sem
   tocar nos registros reais (Configurações → Armazenamento).
 
@@ -50,6 +83,9 @@ aparelho: não existe conta, servidor nem sincronização.
 - React 18 + TypeScript + Vite
 - IndexedDB como banco local (sem dependências de ORM), com anexos guardados como `Blob`
 - `fflate` para gerar e ler os backups `.zip`
+- `pdfjs-dist` carregado sob demanda, só quando há um PDF para indexar
+- `@capacitor/local-notifications` para as notificações locais
+- WebCrypto do aparelho para PBKDF2, AES-GCM e SHA-256 — nenhum algoritmo próprio
 - Capacitor 6 para empacotar como aplicativo Android nativo
 - Nenhuma chamada de rede em tempo de execução
 
@@ -57,13 +93,27 @@ aparelho: não existe conta, servidor nem sincronização.
 
 ```
 src/
-  db/          tipos, camada IndexedDB, operações do arquivo e categorias iniciais
-  state/       contextos de dados (ArchiveContext), interface (UiContext) e bloqueio
+  db/          tipos, IndexedDB versionado, operações do arquivo, categorias e origens
+  state/       Archive, Theme, Share, Lock e Ui — os contextos que sustentam o app
   screens/     uma tela por rota
-  components/  cartões, anexos, filtros, leitor, galeria e primitivos de interface
-  utils/       datas, busca, estatísticas, backup, PIN/biometria, .ics, demonstração
-  theme/       folha de estilo única com as variáveis de cor e tipografia
+  components/  cartões, anexos, filtros, calendário, histórico, leitor e primitivos
+  utils/       datas, busca indexada, estatísticas, backup, criptografia, hash,
+               integridade, extração de texto, notificações, ponte nativa, cores
+  theme/       base.css (estrutura, sem nenhuma cor literal) + themes.css (tokens)
+android/
+  .../SharedIntakeStore.java     recebe e persiste o conteúdo compartilhado
+  .../RelicarioNativePlugin.java ponte Capacitor: compartilhamentos e widget
+  .../RelicarioWidget.java       widget real da tela inicial
 ```
+
+### Como os temas funcionam
+
+`base.css` não contém **nenhuma cor literal** — tudo vem de tokens (`--paper`, `--ink`,
+`--accent`…) definidos por tema e por modo em `themes.css`. Trocar de tema troca só esse
+conjunto de variáveis, e a mudança alcança toda a interface, inclusive diálogos, calendário,
+gráficos e estados vazios. O tema personalizado injeta os mesmos tokens em `<html>`, derivando
+automaticamente os valores secundários (contraste do texto sobre a cor principal, bordas fortes,
+cores das categorias).
 
 ---
 
@@ -76,6 +126,22 @@ npm run build      # gera dist/
 npm run preview    # serve dist/
 npm run typecheck
 ```
+
+## Testando as novas funcionalidades
+
+- **Compartilhamento:** instale o APK, abra o WhatsApp (ou qualquer app), compartilhe uma
+  mensagem ou arquivo e escolha “Guardar no Relicário”. O conteúdo aparece em **Entrada**.
+  Feche e reabra o aplicativo antes de organizar: os arquivos continuam lá, porque foram
+  copiados para o armazenamento privado em vez de ficarem presos a uma URI temporária.
+- **Datas:** no formulário, o seletor “Quando isso aconteceu” muda o campo seguinte. Escolha
+  “Mês e ano” e confira no **Calendário**: o registro aparece no bloco “Sem dia exato”, não numa
+  casa do mês.
+- **Backup criptografado:** Configurações → Backup → “Proteger com senha”. Para testar a
+  recuperação, escolha o arquivo `.relicario` gerado e digite uma senha errada primeiro.
+- **Temas:** Configurações → Aparência. “Personalizar minhas cores” mostra a interface mudando
+  enquanto você edita, e avisa quando uma combinação fica difícil de ler.
+- **Lixeira e histórico:** exclua uma memória, restaure-a em Configurações → Lixeira, depois
+  abra “Histórico deste registro” na memória.
 
 ## Gerando o aplicativo Android
 

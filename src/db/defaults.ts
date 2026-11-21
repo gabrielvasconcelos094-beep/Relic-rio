@@ -32,3 +32,34 @@ export const CATEGORY_ICONS = [
 ] as const;
 
 export type CategoryIcon = (typeof CATEGORY_ICONS)[number];
+
+/** Origens iniciais. O usuário pode renomear, remover e criar outras. */
+export const BUILTIN_SOURCES: { id: string; name: string; icon: string; builtin: boolean; order: number }[] = [
+  { id: 'src_whatsapp', name: 'WhatsApp', icon: 'chat', builtin: true, order: 0 },
+  { id: 'src_telegram', name: 'Telegram', icon: 'chat', builtin: true, order: 1 },
+  { id: 'src_instagram', name: 'Instagram', icon: 'image', builtin: true, order: 2 },
+  { id: 'src_email', name: 'E-mail', icon: 'letter', builtin: true, order: 3 },
+  { id: 'src_carta', name: 'Carta manuscrita', icon: 'letter', builtin: true, order: 4 },
+  { id: 'src_presencial', name: 'Conversa presencial', icon: 'hands', builtin: true, order: 5 },
+  { id: 'src_presente', name: 'Presente físico', icon: 'box', builtin: true, order: 6 },
+  { id: 'src_fotografia', name: 'Fotografia', icon: 'image', builtin: true, order: 7 },
+  { id: 'src_outro', name: 'Outro', icon: 'archive', builtin: true, order: 8 },
+];
+
+/**
+ * Pacotes Android cuja origem pode ser deduzida com segurança a partir do
+ * compartilhamento. Qualquer pacote fora desta lista NÃO recebe origem automática.
+ */
+export const PACKAGE_TO_SOURCE: Record<string, string> = {
+  'com.whatsapp': 'src_whatsapp',
+  'com.whatsapp.w4b': 'src_whatsapp',
+  'org.telegram.messenger': 'src_telegram',
+  'org.thunderdog.challegram': 'src_telegram',
+  'com.instagram.android': 'src_instagram',
+  'com.google.android.gm': 'src_email',
+};
+
+/** Ícones disponíveis para coleções. */
+export const COLLECTION_ICONS = [
+  'book', 'star', 'heart', 'letter', 'box', 'leaf', 'light', 'capsule', 'archive', 'calendar',
+] as const;

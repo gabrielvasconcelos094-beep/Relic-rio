@@ -35,7 +35,7 @@ export function MemoryReader({
           {memory.title || 'Memória sem título'}
         </h2>
         <div className="meta-line" style={{ marginTop: 6 }}>
-          <span>{formatCivil(memory.occurredAt, memory.occurredPrecision)}</span>
+          <span>{formatCivil(memory.occurredAt, memory.occurredPrecision, memory.occurredNote)}</span>
           {linked.length > 0 && (
             <>
               <span className="sep">·</span>

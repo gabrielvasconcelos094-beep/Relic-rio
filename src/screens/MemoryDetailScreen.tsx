@@ -6,7 +6,8 @@ import { Icon } from '@/components/Icon';
 import { TopBar, Sheet } from '@/components/ui';
 import { CategoryChip } from '@/components/MemoryCard';
 import { AttachmentView } from '@/components/Attachments';
-import { formatCivil, formatTimestamp } from '@/utils/date';
+import { PRECISION_LABEL, formatCivil, formatTimestamp } from '@/utils/date';
+import { MemoryHistory } from '@/components/MemoryHistory';
 import { deliverFile, exportMemoryBundle } from '@/utils/backup';
 
 export function MemoryDetailScreen() {
@@ -14,17 +15,22 @@ export function MemoryDetailScreen() {
   const navigate = useNavigate();
   const { toast, confirm } = useUi();
   const {
-    memories,
+    allMemories,
     people,
     categories,
+    collections,
+    sources,
     attachments,
+    settings,
     toggleFavorite,
     toggleHardDay,
-    deleteMemory,
+    trashMemory,
+    saveMemory,
   } = useArchive();
   const [menu, setMenu] = useState(false);
+  const [historyOpen, setHistoryOpen] = useState(false);
 
-  const memory = memories.find((m) => m.id === id);
+  const memory = allMemories.find((m) => m.id === id);
 
   if (!memory) {
     return (
@@ -46,18 +52,21 @@ export function MemoryDetailScreen() {
   const cats = memory.categoryIds
     .map((cid) => categories.find((c) => c.id === cid))
     .filter((c): c is NonNullable<typeof c> => !!c);
+  const cols = memory.collectionIds
+    .map((cid) => collections.find((c) => c.id === cid))
+    .filter((c): c is NonNullable<typeof c> => !!c);
+  const source = memory.sourceId ? sources.find((s) => s.id === memory.sourceId) : null;
 
   const remove = async () => {
     const ok = await confirm({
-      title: 'Excluir memória',
-      message:
-        'Este registro e seus anexos serão apagados definitivamente deste aparelho. Não é possível desfazer.',
-      confirmLabel: 'Excluir',
+      title: 'Mover para a lixeira',
+      message: `Este registro e seus anexos vão para a lixeira e serão apagados definitivamente em ${settings.trashRetentionDays} dias. Até lá, dá para restaurar.`,
+      confirmLabel: 'Mover para a lixeira',
       destructive: true,
     });
     if (!ok) return;
-    await deleteMemory(memory.id);
-    toast('Memória excluída.');
+    await trashMemory(memory.id);
+    toast('Movida para a lixeira. Dá para restaurar em Configurações → Lixeira.');
     navigate('/memorias', { replace: true });
   };
 
@@ -120,15 +129,48 @@ export function MemoryDetailScreen() {
           <h1 className="serif">{memory.title || 'Memória sem título'}</h1>
           <div className="meta-line" style={{ marginTop: 8 }}>
             <Icon name="calendar" size={14} />
-            <span>{formatCivil(memory.occurredAt, memory.occurredPrecision)}</span>
+            <span>{formatCivil(memory.occurredAt, memory.occurredPrecision, memory.occurredNote)}</span>
+            {memory.occurredPrecision !== 'day' && (
+              <>
+                <span className="sep">·</span>
+                <span>{PRECISION_LABEL[memory.occurredPrecision].toLowerCase()}</span>
+              </>
+            )}
           </div>
           <div className="meta-line" style={{ marginTop: 4 }}>
             <Icon name="archive" size={14} />
             <span>Guardado em {formatTimestamp(memory.createdAt)}</span>
+            {memory.capturedAt && memory.capturedAt.slice(0, 10) !== memory.createdAt.slice(0, 10) && (
+              <>
+                <span className="sep">·</span>
+                <span>recebido em {formatTimestamp(memory.capturedAt)}</span>
+              </>
+            )}
           </div>
+          {source && (
+            <div className="meta-line" style={{ marginTop: 4 }}>
+              <Icon name={source.icon} size={14} />
+              <span>Veio de {source.name}</span>
+            </div>
+          )}
+          {memory.inbox && (
+            <div className="row" style={{ marginTop: 10 }}>
+              <span className="chip">Na Entrada, aguardando organização</span>
+              <button
+                type="button"
+                className="btn btn-sm"
+                onClick={async () => {
+                  await saveMemory({ ...memory, inbox: false });
+                  toast('Organizada e movida para o arquivo.');
+                }}
+              >
+                Organizar
+              </button>
+            </div>
+          )}
         </header>
 
-        {(linkedPeople.length > 0 || cats.length > 0 || memory.tags.length > 0) && (
+        {(linkedPeople.length > 0 || cats.length > 0 || cols.length > 0 || memory.tags.length > 0) && (
           <div className="row-wrap">
             {linkedPeople.map((p) => (
               <Link key={p.id} to={`/pessoa/${p.id}`} className="chip" style={{ textDecoration: 'none' }}>
@@ -138,6 +180,17 @@ export function MemoryDetailScreen() {
             ))}
             {cats.map((c) => (
               <CategoryChip key={c.id} category={c} />
+            ))}
+            {cols.map((c) => (
+              <Link
+                key={c.id}
+                to={`/colecao/${c.id}`}
+                className="chip"
+                style={{ textDecoration: 'none' }}
+              >
+                <Icon name={c.icon} size={13} />
+                {c.name}
+              </Link>
             ))}
             {memory.tags.map((t) => (
               <Link
@@ -204,7 +257,23 @@ export function MemoryDetailScreen() {
             Editar
           </button>
         </div>
+
+        <button
+          type="button"
+          className="link-row"
+          onClick={() => setHistoryOpen(true)}
+          style={{ borderTop: '1px solid var(--line)' }}
+        >
+          <Icon name="clock" />
+          <span className="label">
+            <strong>Histórico deste registro</strong>
+            <span>Como foi organizado e alterado ao longo do tempo</span>
+          </span>
+          <Icon name="forward" />
+        </button>
       </article>
+
+      <MemoryHistory memory={memory} open={historyOpen} onClose={() => setHistoryOpen(false)} />
 
       <Sheet open={menu} onClose={() => setMenu(false)} title="Ações">
         <div className="list-divided">
@@ -239,7 +308,8 @@ export function MemoryDetailScreen() {
           >
             <Icon name="trash" />
             <span className="label">
-              <strong>Excluir memória</strong>
+              <strong>Mover para a lixeira</strong>
+              <span>Recuperável por {settings.trashRetentionDays} dias</span>
             </span>
           </button>
         </div>

@@ -1,4 +1,4 @@
-import type { CivilDate } from '@/db/types';
+import type { CivilDate, DatePrecision } from '@/db/types';
 
 export const MONTHS_PT = [
   'janeiro', 'fevereiro', 'março', 'abril', 'maio', 'junho',
@@ -40,16 +40,39 @@ export function civilToDate(date: CivilDate): Date | null {
   return p ? new Date(p.year, p.month - 1, p.day) : null;
 }
 
+/**
+ * Apresenta a data respeitando a precisão informada pelo usuário.
+ * Nunca inventa dia nem mês: 'month' mostra só mês e ano, 'year' só o ano.
+ */
 export function formatCivil(
   date: CivilDate | null,
-  precision: 'day' | 'month' | 'year' | 'unknown' = 'day',
+  precision: DatePrecision = 'day',
+  note = '',
 ): string {
-  if (!date) return 'Sem data';
+  if (precision === 'unknown' || !date) return note.trim() || 'Sem data';
   const p = parseCivil(date);
-  if (!p) return 'Sem data';
+  if (!p) return note.trim() || 'Sem data';
   if (precision === 'year') return String(p.year);
   if (precision === 'month') return `${MONTHS_PT[p.month - 1]} de ${p.year}`;
+  if (precision === 'approximate') {
+    const base = `${MONTHS_PT[p.month - 1]} de ${p.year}`;
+    return note.trim() ? `Por volta de ${base} · ${note.trim()}` : `Por volta de ${base}`;
+  }
   return `${p.day} de ${MONTHS_PT[p.month - 1]} de ${p.year}`;
+}
+
+/** Rótulo curto da precisão, para formulários e listas. */
+export const PRECISION_LABEL: Record<DatePrecision, string> = {
+  day: 'Dia exato',
+  month: 'Mês e ano',
+  year: 'Apenas o ano',
+  approximate: 'Data aproximada',
+  unknown: 'Data desconhecida',
+};
+
+/** Só datas com dia exato podem ocupar uma casa do calendário. */
+export function hasExactDay(precision: DatePrecision): boolean {
+  return precision === 'day';
 }
 
 export function formatCivilShort(date: CivilDate | null): string {

@@ -1,4 +1,4 @@
-import type { Attachment, Capsule, Memory } from '@/db/types';
+import type { Attachment, Capsule, CivilDate, Memory } from '@/db/types';
 import { parseCivil, todayCivil } from './date';
 import { byOccurrenceDesc } from './search';
 
@@ -9,6 +9,7 @@ export function onThisDay(memories: Memory[], today = new Date()): Memory[] {
   const year = today.getFullYear();
   return memories
     .filter((m) => {
+      // Só datas com dia exato: nada de inferir dia a partir de mês/ano.
       if (!m.occurredAt || m.occurredPrecision !== 'day') return false;
       const p = parseCivil(m.occurredAt);
       return !!p && p.month === month && p.day === day && p.year < year;
@@ -76,4 +77,96 @@ export type CapsuleStatus = 'sealed' | 'ready' | 'opened';
 export function capsuleStatus(capsule: Capsule, today = todayCivil()): CapsuleStatus {
   if (capsule.openedAt) return 'opened';
   return capsule.openAt > today ? 'sealed' : 'ready';
+}
+
+/* ================================================================
+   Calendário
+   ================================================================ */
+
+export interface CalendarDay {
+  day: number;
+  date: CivilDate;
+  memories: Memory[];
+}
+
+export interface CalendarMonth {
+  year: number;
+  month: number;
+  /** Primeiro dia da semana (0 = domingo) em que o mês começa. */
+  startWeekday: number;
+  days: CalendarDay[];
+  /**
+   * Registros daquele mês que NÃO têm dia exato (mês/ano, só ano, aproximados).
+   * Ficam fora da grade para não inventar uma data que o usuário não informou.
+   */
+  loose: Memory[];
+  total: number;
+}
+
+export function buildCalendarMonth(
+  memories: Memory[],
+  year: number,
+  month: number,
+): CalendarMonth {
+  const daysInMonth = new Date(year, month, 0).getDate();
+  const startWeekday = new Date(year, month - 1, 1).getDay();
+
+  const byDay = new Map<number, Memory[]>();
+  const loose: Memory[] = [];
+
+  for (const m of memories) {
+    if (!m.occurredAt) continue;
+    const p = parseCivil(m.occurredAt);
+    if (!p) continue;
+
+    if (m.occurredPrecision === 'day') {
+      if (p.year === year && p.month === month) {
+        const list = byDay.get(p.day) ?? [];
+        list.push(m);
+        byDay.set(p.day, list);
+      }
+      continue;
+    }
+    // Precisão menor que o dia: pertence ao mês (ou ao ano), nunca a uma casa.
+    if (m.occurredPrecision === 'year') {
+      if (p.year === year) loose.push(m);
+    } else if (p.year === year && p.month === month) {
+      loose.push(m);
+    }
+  }
+
+  const days: CalendarDay[] = [];
+  for (let d = 1; d <= daysInMonth; d += 1) {
+    days.push({
+      day: d,
+      date: `${year}-${String(month).padStart(2, '0')}-${String(d).padStart(2, '0')}`,
+      memories: byDay.get(d) ?? [],
+    });
+  }
+
+  return {
+    year,
+    month,
+    startWeekday,
+    days,
+    loose,
+    total: days.reduce((sum, d) => sum + d.memories.length, 0) + loose.length,
+  };
+}
+
+/** Anos que têm pelo menos um registro, do mais recente ao mais antigo. */
+export function yearsWithMemories(memories: Memory[]): number[] {
+  const set = new Set<number>();
+  for (const m of memories) {
+    const p = m.occurredAt ? parseCivil(m.occurredAt) : null;
+    if (p) set.add(p.year);
+  }
+  return [...set].sort((a, b) => b - a);
+}
+
+/** Quantos dias faltam para a exclusão definitiva de um item da lixeira. */
+export function daysLeftInTrash(memory: Memory, retentionDays: number): number {
+  if (!memory.deletedAt) return retentionDays;
+  const elapsed = (Date.now() - new Date(memory.deletedAt).getTime()) / 86400000;
+  return Math.max(0, Math.ceil(retentionDays - elapsed));
 }

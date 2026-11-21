@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- Widget: o mesmo tema Relicário, modo escuro, acompanhando o sistema. -->
+    <color name="widget_paper">#22201C</color>
+    <color name="widget_line">#322E28</color>
+    <color name="widget_ink">#ECE4D8</color>
+    <color name="widget_ink_soft">#B7AD9E</color>
+    <color name="widget_faint">#897F71</color>
+    <color name="widget_accent">#C9A384</color>
+    <color name="widget_button">#2E2822</color>
+</resources>
